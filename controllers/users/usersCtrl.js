@@ -116,32 +116,38 @@ const fetchUserDetailsCtrl = expressAsyncHandler(async (req, res) => {
 const userProfileCtrl = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongodbId(id);
-  //1.Find the login user
-  //2. Check this particular if the login user exists in the array of viewedBy
-
-  //Get the login user
-  const loginUserId = req?.user?._id?.toString();
+  
+  // Get the login user's ID
+  const loginUserId = req.user._id.toString();
+  
   try {
     const myProfile = await User.findById(id)
       .populate("posts")
       .populate("viewedBy");
-    const alreadyViewed = myProfile?.viewedBy?.find(user => {
-      console.log(user);
-      return user?._id?.toString() === loginUserId;
-    });
-    if (alreadyViewed) {
-      res.json(myProfile);
-    } else {
       
-      const profile = await User.findByIdAndUpdate(myProfile?._id, {
-        $push: { viewedBy: loginUserId },
-      });
-      res.json(profile);
+    // Check if the profile belongs to the logged-in user
+    if (myProfile._id.toString() === loginUserId) {
+      // If the profile belongs to the logged-in user, return the profile without updating viewedBy
+      return res.json(myProfile);
     }
+    
+    // Update the viewedBy array with the user's ID
+    await User.findByIdAndUpdate(id, {
+      $addToSet: { viewedBy: loginUserId }, // Use $addToSet to ensure no duplicate entries
+    }, { new: true }); // { new: true } option returns the updated document
+    
+    // Return the updated profile
+    const updatedProfile = await User.findById(id)
+      .populate("posts")
+      .populate("viewedBy");
+    res.json(updatedProfile);
   } catch (error) {
     res.json(error);
   }
 });
+
+
+
 //------------------------------
 //Update profile
 //------------------------------
