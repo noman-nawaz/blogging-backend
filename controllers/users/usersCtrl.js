@@ -8,6 +8,16 @@ const fs = require("fs");
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
 const crypto = require('crypto');
+
+var transporter = nodemailer.createTransport(smtpTransport({
+  service: 'gmail',
+  host: 'smtp.gmail.com',
+  auth: {
+    user: process.env.ADMIN_EMAIL, 
+    pass: process.env.ADMIN_EMAIL_PASSWORD, 
+  },
+}));
+
 //-------------------------------------
 //Register
 //-------------------------------------
@@ -25,6 +35,22 @@ const userRegisterCtrl = expressAsyncHandler(async (req, res) => {
       email: req?.body?.email,
       password: req?.body?.password,
     });
+
+    //build your message
+    const message = `
+        <p>Welcome ${req?.body?.firstName}! 🎉 We are thrilled to have you join the BlogBliss community. Your decision to register with us means a lot, and we're excited to embark on this blogging journey together.</p>
+        <p>At BlogBliss, we believe in the power of words to inspire, inform, and connect. Whether you're here to share your thoughts, learn something new, or engage with fellow bloggers, you're in the right place.</p>
+    `;
+    const mailOptions = {
+      from: process.env.ADMIN_EMAIL,
+      to: req?.body?.email,
+      subject: 'Welcome to BlogBliss',
+      html: message,
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
     res.json(user);
   } catch (error) {
     res.json(error);
@@ -323,15 +349,6 @@ const profilePhotoUploadCtrl = expressAsyncHandler(async (req, res) => {
 //------------------------------
 //Generate Account Verification Token
 //------------------------------
-
-var transporter = nodemailer.createTransport(smtpTransport({
-  service: 'gmail',
-  host: 'smtp.gmail.com',
-  auth: {
-    user: process.env.ADMIN_EMAIL, 
-    pass: process.env.ADMIN_EMAIL_PASSWORD, 
-  },
-}));
 
 const generateVerificationTokenCtrl = expressAsyncHandler(async (req, res) => {
   const loginUserId = req.user.id;
