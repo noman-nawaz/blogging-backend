@@ -12,9 +12,10 @@ const createPostCtrl = expressAsyncHandler(async (req, res) => {
 
   //check for bad words
   const filter = new Filter();
-  const isProfane = filter.isProfane(req.body.title, req.body.description);
+  const isProfaneTitle = filter.isProfane(req.body.title);
+  const isProfaneDescription = filter.isProfane(req.body.description);
   //Block user if bad words are used
-  if (isProfane) {
+  if (isProfaneTitle || isProfaneDescription) {
     await User.findByIdAndUpdate(id, {
       isBlocked: true,
     });
@@ -117,7 +118,7 @@ const deletePostCtrl = expressAsyncHandler(async (req, res) => {
   validateMongodbId(id);
 
   try {
-    const post = await Post.findOneAndDelete(id);
+    const post = await Post.findOneAndDelete({ _id: id });
     res.json(post);
   } catch (error) {
     res.json(error);
