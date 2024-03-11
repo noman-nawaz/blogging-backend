@@ -6,15 +6,18 @@ const Filter = require("bad-words");
 const validateMongodbId = require("../../utils/validateMongodbID");
 const cloudinaryUploadImg = require("../../utils/cloudinary");
 
+//-------------------------------
+//Craete Post
+//-------------------------------
 const createPostCtrl = expressAsyncHandler(async (req, res) => {
   // Find the logged in User
   const id  = req.user.id;
 
-  //check for bad words
+  // Check for bad words
   const filter = new Filter();
   const isProfaneTitle = filter.isProfane(req.body.title);
   const isProfaneDescription = filter.isProfane(req.body.description);
-  //Block user if bad words are used
+  // Block user if bad words are used
   if (isProfaneTitle || isProfaneDescription) {
     await User.findByIdAndUpdate(id, {
       isBlocked: true,
@@ -24,19 +27,26 @@ const createPostCtrl = expressAsyncHandler(async (req, res) => {
     );
   }
 
-  //1. Get the path to img
-  const localPath = `public/images/posts/${req.file.filename}`;
-  //2.Upload to cloudinary
-  const imgUploaded = await cloudinaryUploadImg(localPath);
-  try {
-     const post = await Post.create({
-       ...req.body,
-       image: imgUploaded?.url,
-       user: id,
-     });
-    res.json(post);
-    // remove image from temporary local storage
+  // Set a default image URL
+  let imageUrl = "https://res.cloudinary.com/doz76hqpz/image/upload/v1710157452/default_post_x9vfjd.jpg";
+
+  if(req.file) {
+    // If user has uploaded an image, proceed with uploading it
+    const localPath = `public/images/posts/${req.file.filename}`;
+    const imgUploaded = await cloudinaryUploadImg(localPath);
+    imageUrl = imgUploaded?.url;
+    // Remove image from temporary local storage
     fs.unlinkSync(localPath);
+  }
+
+  try {
+    // Create the post with or without image URL
+    const post = await Post.create({
+      ...req.body,
+      image: imageUrl,
+      user: id,
+    });
+    res.json(post);
   } catch (error) {
     res.json(error);
   }
