@@ -22,6 +22,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Email is required"],
     },
+    walletAddress: {
+      type: String,
+      //required: [true, "Wallet address is required"],
+      unique: true,
+      minlength: 42,
+      maxlength: 42
+    },
     bio: {
       type: String,
     },
@@ -33,6 +40,35 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    rewardBlockId: {
+      type: Number,
+      default: 0,
+    },
+    newTotalLikes: {
+      type: Number,
+      default: 0,
+    },
+    prevTotalLikes: {
+      type: Number,
+      default: 0,
+    },
+    newFollowersCount: {
+      type: Number,
+      default: 0,
+    },
+    prevFollowersCount: {
+      type: Number,
+      default: 0,
+    },
+    newReward: {
+      type: Number,
+      default: 0,
+    },
+    prevReward: {
+      type: Number,
+      default: 0,
+    },
+
     isBlocked: {
       type: Boolean,
       default: false,

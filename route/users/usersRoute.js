@@ -16,7 +16,8 @@ const {
     generateVerificationTokenCtrl,
     accountVerificationCtrl,
     forgetPasswordTokenCtrl,
-    passwordResetCtrl
+    passwordResetCtrl,
+    fetchUserLikesCtrl
 } = require("../../controllers/users/usersCtrl");
 
 const authMiddleware = require("../../middlewares/auth/authMiddleware");
@@ -41,5 +42,7 @@ userRoutes.post('/generate-verify-email-token', authMiddleware, generateVerifica
 userRoutes.put('/verify-account', authMiddleware, accountVerificationCtrl);
 userRoutes.post('/forget-password-token', forgetPasswordTokenCtrl);
 userRoutes.put('/reset-password', passwordResetCtrl); 
+
+userRoutes.get("/likes/:id", authMiddleware, fetchUserLikesCtrl);
 
 module.exports = userRoutes;

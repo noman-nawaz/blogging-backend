@@ -1,4 +1,5 @@
 const User = require("../../model/user/User");
+const Post = require("../../model/post/Post");
 const expressAsyncHandler = require("express-async-handler"); // used for error handling
 const generateToken = require("../../config/token/generateToken");  // used to generate token
 const validateMongodbId = require("../../utils/validateMongodbID"); // used to check if user id is valid
@@ -8,6 +9,7 @@ const fs = require("fs");
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
 const crypto = require('crypto');
+const { setTransaction } = require("../blockchaincontroller");
 
 var transporter = nodemailer.createTransport(smtpTransport({
   service: 'gmail',
@@ -34,6 +36,7 @@ const userRegisterCtrl = expressAsyncHandler(async (req, res) => {
       lastName: req?.body?.lastName,
       email: req?.body?.email,
       password: req?.body?.password,
+      walletAddress: req?.body?.walletAddress
     });
 
     //build your message
@@ -460,6 +463,63 @@ const passwordResetCtrl = expressAsyncHandler(async (req, res) => {
   res.json(user);
 });
 
+//------------------------------
+//Calculate Likes Controller
+//------------------------------
+
+const fetchUserLikesCtrl = expressAsyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validateMongodbId(id);
+
+  try {
+    // Fetch all posts of the given user, including only the 'likes' field
+    const userPosts = await Post.find({ user: id }, { likes: 1 }).lean();
+
+    // Calculate total likes across all posts
+    let newTotalLikes = 0;
+    userPosts.forEach(post => {
+      newTotalLikes += post.likes.length;
+    });
+
+    // Retrieve the user document
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Fetch the number of followers for the given user
+    const followersCount = user.followers.length;
+    const rewardCount = (newTotalLikes*1) + (followersCount * 5);
+
+    const followers = followersCount- user.prevFollowersCount;
+    const likes = newTotalLikes - user.prevTotalLikes; 
+    const reward = rewardCount - user.prevReward;
+    const blockId = Math.floor(Math.random() * 900000) + 100000;
+
+    setTransaction({_id: blockId, _userid: user.id, _followers: followers, _likes: likes, _reward: reward});
+    // Update totalLikes and prevTotalLikes
+    user.newTotalLikes = likes;
+    user.newFollowersCount = followers;
+    user.newReward = reward;
+    user.prevTotalLikes += user.newTotalLikes;
+    user.prevFollowersCount += user.newFollowersCount;
+    user.prevReward += user.newReward;
+    user.rewardBlockId = blockId;
+    // Save the updated user document
+    await user.save();
+    
+    // Send the total likes count as JSON response
+    res.json(user);
+  } catch (error) {
+    // Log the error for debugging purposes
+    console.error("Error fetching user posts and updating total likes:", error);
+
+    // Send an internal server error response
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 
 
 module.exports = { 
@@ -479,6 +539,7 @@ module.exports = {
   generateVerificationTokenCtrl,
   accountVerificationCtrl,
   forgetPasswordTokenCtrl,
-  passwordResetCtrl
+  passwordResetCtrl,
+  fetchUserLikesCtrl
 };
 

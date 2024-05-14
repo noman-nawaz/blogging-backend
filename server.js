@@ -9,6 +9,7 @@ const commentRoutes = require("./route/comments/commentRoutes");
 const emailMsgRoute = require("./route/emailMsg/emailMsgRoute");
 const categoryRoute = require("./route/category/categoryRoute");
 const {errorHandler, notFound} = require("./middlewares/error/errorHandler");
+const blockchainRoute = require("./route/blockchainRoute");
 
 const app = express();
 //DB
@@ -29,6 +30,8 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/email", emailMsgRoute);
 //Categories routes
 app.use("/api/category", categoryRoute);
+
+app.use("/api/blockchain", blockchainRoute);
 
 //not Found error
 app.use(notFound);
