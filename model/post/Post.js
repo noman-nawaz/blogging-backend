@@ -16,6 +16,11 @@ const postSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+   
     isDisLiked: {
       type: Boolean,
       default: false,

@@ -5,6 +5,10 @@ const fs = require("fs");
 const Filter = require("bad-words");
 const validateMongodbId = require("../../utils/validateMongodbID");
 const cloudinaryUploadImg = require("../../utils/cloudinary");
+const Web3 = require('web3');
+
+//const web3 = new Web3('https://eth-mainnet.g.alchemy.com/v2/9QrKCbTIHLCBj81pNpM38KBDxYb05F98');
+const web3 = new Web3('https://sepolia.infura.io/v3/6d92e490ede84d3bbd487e2ef0784bac');
 
 //-------------------------------
 //Craete Post
@@ -38,39 +42,96 @@ const createPostCtrl = expressAsyncHandler(async (req, res) => {
     // Remove image from temporary local storage
     fs.unlinkSync(localPath);
   }
+   const isFeatured = req.body.isFeatured;
 
+   if(isFeatured==='true') 
+    {
+      const transactionHash = req.body.transectionHash;
+      const walletAddress = "0x635e577109b5AC6D616f017C4f84F98e5210a704";
+      const receipt = await web3.eth.getTransactionReceipt(transactionHash);
+      console.log(receipt);
+      if(!receipt)
+        {
+          throw new Error("Transaction receipt not found or not confirmed yet.");
+        }
+
+      const flag = receipt.to.toLowerCase() !== walletAddress.toLowerCase();
+      if(flag)
+        {
+          throw new Error("OOps! Transaction is not sent to valid account.");
+        }
+      const transaction = await web3.eth.getTransaction(transactionHash);
+      const amountReceived = web3.utils.fromWei(transaction.value.toString(), 'ether');
+      if(parseFloat(amountReceived) < 0.01)
+        {
+          throw new Error("OOps! Transaction amount is less than 0.01 Eth.");
+        }
+      if(!flag && receipt && parseFloat(amountReceived) === 0.01)
+        {
+         
+          try {
+            // Create the post with or without image URL
+            const post = await Post.create({
+              title: req.body.title,
+              category: req.body.category,
+              description: req.body.description,
+              image: imageUrl,
+              isFeatured: req.body.isFeatured,
+              //transactionHash: req.body.transactionHash,
+              user: id,
+            });
+            res.json(post);
+          } catch (error) {
+            res.json(error);
+          }
+        }
+    }
+    else
+    {
   try {
     // Create the post with or without image URL
     const post = await Post.create({
-      ...req.body,
+      title: req.body.title,
+      category: req.body.category,
+      description: req.body.description,
       image: imageUrl,
       user: id,
     });
     res.json(post);
   } catch (error) {
+    console.log(error);
     res.json(error);
   }
+}
 });
-
-//-------------------------------
-//Fetch all the Posts
-//-------------------------------
 
 const fetchPostsCtrl = expressAsyncHandler(async (req, res) => {
   const hasCategory = req.query.category;
   try {
+    let posts;
     // check if it has a category
-    if(hasCategory) {
-      const posts = await Post.find({category: hasCategory}).populate("user").populate("comments");
-    res.json(posts);
+    if (hasCategory) {
+      posts = await Post.find({ category: hasCategory }).populate("user").populate("comments");
     } else {
-      const posts = await Post.find().populate("user").populate("comments");
-    res.json(posts);
+      posts = await Post.find().populate("user").populate("comments");
     }
+    
+    // Sort the posts based on isFeatured flag and most recent
+    posts.sort((a, b) => {
+      // Sort by isFeatured flag (true first)
+      if (b.isFeatured - a.isFeatured !== 0) {
+        return b.isFeatured - a.isFeatured;
+      }
+      // Sort by most recent (createdAt)
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    res.json(posts);
   } catch (error) {
     res.json(error);
   }
 });
+
 
 //------------------------------
 //Fetch a single post
