@@ -500,7 +500,7 @@ const fetchUserLikesCtrl = expressAsyncHandler(async (req, res) => {
   
     sendEther({receiverAddress: user.walletAddress, amountInEthers: reward});
   
-    setTransaction({_id: blockId, _userid: user.id, _followers: followers, _likes: likes, _reward: reward});
+    //setTransaction({_id: blockId, _userid: user.id, _followers: followers, _likes: likes, _reward: reward});
     // Update totalLikes and prevTotalLikes
     user.newTotalLikes = likes;
     user.newFollowersCount = followers;
