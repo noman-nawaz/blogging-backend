@@ -9,7 +9,9 @@ const fs = require("fs");
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
 const crypto = require('crypto');
-const { setTransaction } = require("../blockchaincontroller");
+const { setTransaction, sendEther } = require("../blockchaincontroller");
+
+
 
 var transporter = nodemailer.createTransport(smtpTransport({
   service: 'gmail',
@@ -470,7 +472,6 @@ const passwordResetCtrl = expressAsyncHandler(async (req, res) => {
 const fetchUserLikesCtrl = expressAsyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongodbId(id);
-
   try {
     // Fetch all posts of the given user, including only the 'likes' field
     const userPosts = await Post.find({ user: id }, { likes: 1 }).lean();
@@ -496,7 +497,9 @@ const fetchUserLikesCtrl = expressAsyncHandler(async (req, res) => {
     const likes = newTotalLikes - user.prevTotalLikes; 
     const reward = rewardCount - user.prevReward;
     const blockId = Math.floor(Math.random() * 900000) + 100000;
-
+  
+    sendEther({receiverAddress: user.walletAddress, amountInEthers: reward});
+  
     setTransaction({_id: blockId, _userid: user.id, _followers: followers, _likes: likes, _reward: reward});
     // Update totalLikes and prevTotalLikes
     user.newTotalLikes = likes;

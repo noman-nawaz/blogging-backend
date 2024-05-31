@@ -67,6 +67,9 @@
 //   }
 // };
 
+
+
+
 const Web3 = require("web3");
 const contract = require("@truffle/contract");
 const artifactsTransaction = require("../blockchain_node_api/build/contracts/Contacts.json");
@@ -79,6 +82,8 @@ const web3 = new Web3(
     `wss://eth-sepolia.g.alchemy.com/v2/${process.env.PROJECT_ID}`
   )
 );
+// const web3_send = new Web3('https://sepolia.infura.io/v3/ded983088f234ae28702ddfabbcc411c');
+const web3_send = new Web3('https://eth-sepolia.g.alchemy.com/v2/dkhqCl3kyNVSx2e2CMA1-LZLf--EZ3U2');
 // const contractInstance = contract(artifacts);
 // contractInstance.setProvider(web3.currentProvider);
 
@@ -115,7 +120,7 @@ exports.setTransaction = async ({ _id, _userid, _followers, _likes, _reward }) =
       .estimateGas({ from: account });
     gas = Math.floor(gas);
     console.log(gas);
-    const gasPrice = web3.utils.toWei("0.000001", "ether"); // Reduced gas price
+    const gasPrice = web3.utils.toWei("0.0000001", "ether"); // Reduced gas price
 
     const tx = {
       from: account,
@@ -141,3 +146,21 @@ exports.setTransaction = async ({ _id, _userid, _followers, _likes, _reward }) =
     return false;
   }
 };
+
+exports.sendEther = async ({receiverAddress, amountInEthers}) => {
+
+  try {
+    const amountInWei = web3_send.utils.toWei((amountInEthers/100).toString(), 'ether');
+    var SignedTransaction = await web3_send.eth.accounts.signTransaction({
+      to:  receiverAddress,
+      value: amountInWei,
+      gas: 100000
+      },  BL_PRIVATE_KEY  );
+      web3_send.eth.sendSignedTransaction(SignedTransaction.rawTransaction).then((receipt) => {
+        console.log(receipt);
+  });
+
+  } catch (error) {
+    console.error(`Error sending ether: ${error}`);
+  }
+}
