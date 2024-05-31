@@ -120,7 +120,7 @@ exports.setTransaction = async ({ _id, _userid, _followers, _likes, _reward }) =
       .estimateGas({ from: account });
     gas = Math.floor(gas);
     console.log(gas);
-    const gasPrice = web3.utils.toWei("0.0000001", "ether"); // Reduced gas price
+    const gasPrice = web3.utils.toWei("0.000001", "ether"); // Reduced gas price
 
     const tx = {
       from: account,
