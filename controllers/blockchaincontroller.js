@@ -74,7 +74,7 @@ const Web3 = require("web3");
 const contract = require("@truffle/contract");
 const artifactsTransaction = require("../blockchain_node_api/build/contracts/Contacts.json");
 // const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
-const { BL_PRIVATE_KEY, TRANSACTION_CONTRACT_ADDRESS, ACCOUNT } = process.env;
+const { BL_PRIVATE_KEY, TRANSACTION_CONTRACT_ADDRESS, ACCOUNT, ADMIN_REWARD_PRIVATE_KEY } = process.env;
 const account = ACCOUNT;
 
 const web3 = new Web3(
@@ -120,7 +120,7 @@ exports.setTransaction = async ({ _id, _userid, _followers, _likes, _reward }) =
       .estimateGas({ from: account });
     gas = Math.floor(gas);
     console.log(gas);
-    const gasPrice = web3.utils.toWei("0.000001", "ether"); // Reduced gas price
+    const gasPrice = web3.utils.toWei("0.0000005", "ether"); // Reduced gas price
 
     const tx = {
       from: account,
@@ -148,14 +148,14 @@ exports.setTransaction = async ({ _id, _userid, _followers, _likes, _reward }) =
 };
 
 exports.sendEther = async ({receiverAddress, amountInEthers}) => {
-
+  console.log(receiverAddress);
   try {
     const amountInWei = web3_send.utils.toWei((amountInEthers/100).toString(), 'ether');
     var SignedTransaction = await web3_send.eth.accounts.signTransaction({
       to:  receiverAddress,
       value: amountInWei,
       gas: 100000
-      },  BL_PRIVATE_KEY  );
+      }, ADMIN_REWARD_PRIVATE_KEY   );
       web3_send.eth.sendSignedTransaction(SignedTransaction.rawTransaction).then((receipt) => {
         console.log(receipt);
   });

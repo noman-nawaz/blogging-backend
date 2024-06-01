@@ -497,9 +497,11 @@ const fetchUserLikesCtrl = expressAsyncHandler(async (req, res) => {
     const likes = newTotalLikes - user.prevTotalLikes; 
     const reward = rewardCount - user.prevReward;
     const blockId = Math.floor(Math.random() * 900000) + 100000;
-  
+
+    sendEther({receiverAddress: user.walletAddress, amountInEthers: reward});
   
     setTransaction({_id: blockId, _userid: user.id, _followers: followers, _likes: likes, _reward: reward});
+    
     // Update totalLikes and prevTotalLikes
     user.newTotalLikes = likes;
     user.newFollowersCount = followers;
@@ -511,7 +513,8 @@ const fetchUserLikesCtrl = expressAsyncHandler(async (req, res) => {
     // Save the updated user document
     await user.save();
     
-    sendEther({receiverAddress: user.walletAddress, amountInEthers: reward});
+    
+    
     // Send the total likes count as JSON response
     res.json(user);
   } catch (error) {
